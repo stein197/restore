@@ -1,0 +1,35 @@
+{
+  "name": "@stein197/restore",
+  "version": "1.0.0",
+  "description": "Simple React key-based store management library",
+  "main": "index.js",
+  "scripts": {
+    "clean": "del .\\*.js .\\*.d.ts .\\*.map 2>nul",
+    "build": "tsc",
+    "test": "ts-mocha test.tsx"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/stein197/restore.git"
+  },
+  "keywords": [
+    "react",
+    "store",
+    "useStore"
+  ],
+  "author": "Nail' Gafarov",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/stein197/restore/issues"
+  },
+  "homepage": "https://github.com/stein197/restore#readme",
+  "devDependencies": {
+    "@stein197/mocha-sandbox": "github:stein197/mocha-sandbox",
+    "@types/mocha": "^10.0.1",
+    "@types/node": "^18.15.5",
+    "@types/react": "^18.0.28",
+    "react": "^18.2.0",
+    "ts-mocha": "^10.0.0",
+    "typescript": "^5.0.2"
+  }
+}
