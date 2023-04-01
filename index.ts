@@ -3,9 +3,9 @@ import * as React from "react";
 // TODO
 export = function createStore<T>(store: T): Store<T> {
 	const listenerStore: any = {};
-	function updateStore(key: any, value: any): void {
+	function updateStore<K extends keyof T>(key: K | "", value: T[K] | Partial<T>): void {
 		if (key) {
-			store[key] = value;
+			store[key] = value as T[K];
 			store = {...store};
 			let listenerArray = listenerStore[key];
 			for (const listener of listenerArray)
@@ -18,18 +18,18 @@ export = function createStore<T>(store: T): Store<T> {
 			for (const k in listenerStore) {
 				const listenerArray = listenerStore[k];
 				for (const listener of listenerArray) {
-					listener(k ? store[k] : store);
+					listener(k ? store[k as K] : store);
 				}
 			}
 		}
 	}
-	function addListener(a: string | Function, b?: Function): void {
+	function addListener(a: any, b?: any): void {
 		const [key, listener] = getKeyAndListener(a, b);
 		if (!listenerStore[key])
 			listenerStore[key] = [];
 		listenerStore[key].push(listener);
 	}
-	function removeListener(a: string | Function, b?: Function): void {
+	function removeListener(a: any, b?: any): void {
 		const [key, listener] = getKeyAndListener(a, b);
 		if (!listenerStore[key])
 			return;
@@ -37,11 +37,6 @@ export = function createStore<T>(store: T): Store<T> {
 		listenerStore[key].splice(index, 1);
 		if (!listenerStore[key].length)
 			delete listenerStore[key];
-	}
-	function getKeyAndListener(a: any, b: any): [string, () => void] {
-		const key = typeof a === "string" && b ? a : "";
-		const listener = typeof a === "function" ? a : b;
-		return [key, listener];
 	}
 	return {
 		getValue(key) {
@@ -56,23 +51,31 @@ export = function createStore<T>(store: T): Store<T> {
 		setStore(value) {
 			updateStore("", value);
 		},
-		useStore(key) {
+		useStore<K extends keyof T>(key?: K | ""): any {
 			key = key ?? "";
 			const [state, setState] = React.useState(key ? store[key] : store);
-			const dispatch = React.useCallback(state => updateStore(key, state), [key]);
+			const dispatch = React.useCallback((state: any) => updateStore(key as K, state), [key]);
 			React.useEffect((): () => void => {
 				addListener(key, setState);
 				return () => removeListener(key, setState)
 			}, [key]);
 			return [state, dispatch];
 		},
+		// @ts-ignore
 		on(a, b) {
 			addListener(a, b);
 		},
+		// @ts-ignore
 		off(a, b) {
 			removeListener(a, b);
 		}
 	};
+}
+
+function getKeyAndListener(a: any, b: any): [string, () => void] {
+	const key = typeof a === "string" && b ? a : "";
+	const listener = typeof a === "function" ? a : b;
+	return [key, listener];
 }
 
 /**
