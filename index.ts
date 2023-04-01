@@ -111,12 +111,12 @@ type Store<T> = {
 	 * Hook that watches after store changes.
 	 * @param key Key to watch.
 	 */
-	useStore<K extends keyof T>(key: K): [store: T[K], setStore: (store: T[K] | ((prev: T[K]) => T[K])) => void];
+	useStore<K extends keyof T>(key: K): [store: T[K], setStore: (store: T[K]) => void];
 
 	/**
 	 * Hook that watches after store changes.
 	 */
-	useStore(): [store: T, setStore: (store: Partial<T> | ((prev: T) => T)) => void];
+	useStore(): [store: T, setStore: (store: Partial<T>) => void];
 
 	/**
 	 * Subscribe on key changes.
