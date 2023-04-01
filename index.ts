@@ -2,47 +2,41 @@ import * as React from "react";
 
 // TODO
 export = function createStore<T>(store: T): Store<T> {
-	const listenersStore: any = {};
-	function updateStore(value: Partial<T>): void {
-		store = {...store, ...value};
-		for (const key in listenersStore) {
-			const keyListeners = listenersStore[key];
-			for (const id in keyListeners) {
-				const listener = keyListeners[id];
-				listener(key ? store[key] : store);
+	const listenerStore: any = {};
+	function updateStore(key: any, value: any): void {
+		if (key) {
+			store[key] = value;
+			store = {...store};
+			let listenerArray = listenerStore[key];
+			for (const listener of listenerArray)
+				listener(store[key]);
+			listenerArray = listenerStore[""];
+			for (const listener of listenerArray)
+				listener(store);
+		} else {
+			store = {...store, ...value};
+			for (const k in listenerStore) {
+				const listenerArray = listenerStore[k];
+				for (const listener of listenerArray) {
+					listener(k ? store[k] : store);
+				}
 			}
-		}
-	}
-	function updateEntry(key: string, value: any): void {
-		store[key] = value;
-		store = {...store};
-		const keyListeners = listenersStore[key];
-		for (const id in keyListeners) {
-			const listener = keyListeners[id];
-			listener(value);
-		}
-		const globalListeners = listenersStore[""];
-		if (!globalListeners)
-			return;
-		for (const id in globalListeners) {
-			const listener = globalListeners[id];
-			listener(store);
 		}
 	}
 	function addListener(a: string | Function, b?: Function): void {
 		const [key, listener] = getKeyAndListener(a, b);
-		if (!listenersStore[key])
-			listenersStore[key] = [];
-		listenersStore[key].push(listener);
+		if (!listenerStore[key])
+			listenerStore[key] = [];
+		listenerStore[key].push(listener);
 	}
 	function removeListener(a: string | Function, b?: Function): void {
 		const [key, listener] = getKeyAndListener(a, b);
-		if (!listenersStore[key])
+		if (!listenerStore[key])
 			return;
-		const index = listenersStore[key].indexOf(listener);
-		listenersStore[key].splice(index, 1);
-		if (!listenersStore[key].length)
-			delete listenersStore[key];
+		const index = listenerStore[key].indexOf(listener);
+		listenerStore[key].splice(index, 1);
+		if (!listenerStore[key].length)
+			delete listenerStore[key];
 	}
 	function getKeyAndListener(a: any, b: any): [string, () => void] {
 		const key = typeof a === "string" && b ? a : "";
@@ -57,15 +51,15 @@ export = function createStore<T>(store: T): Store<T> {
 			return store;
 		},
 		setValue(key, value) {
-			updateEntry(key, value);
+			updateStore(key, value);
 		},
 		setStore(value) {
-			updateStore(value);
+			updateStore("", value);
 		},
 		useStore(key) {
 			key = key ?? "";
 			const [state, setState] = React.useState(key ? store[key] : store);
-			const dispatch = React.useCallback(state => key ? updateEntry(key, state) : updateStore(state), [key]);
+			const dispatch = React.useCallback(state => updateStore(key, state), [key]);
 			React.useEffect((): () => void => {
 				addListener(key, setState);
 				return () => removeListener(key, setState)
