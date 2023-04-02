@@ -10,7 +10,7 @@ const STORE_DEFAULT_VALUE = {
 
 let store = createStore({...STORE_DEFAULT_VALUE});
 
-function ComponentStore(): JSX.Element {
+function ComponentStore(props: {noop?: boolean;}): JSX.Element {
 	const CHAR_CODE_START = 65
 	const [value, setValue] = store.useStore();
 	const nextNumber = value.number + 1;
@@ -18,7 +18,7 @@ function ComponentStore(): JSX.Element {
 	return (
 		<div className="store">
 			<p>{JSON.stringify(value)}</p>
-			<button onClick={() => setValue({
+			<button onClick={() => props.noop ? setValue({...value}) : setValue({
 				number: nextNumber,
 				string: value.string + nextChar
 			})}>setStore</button>
@@ -444,6 +444,28 @@ sandbox(globalThis, sb => {
 			await sb.render(<Component />).simulate(sb => sb.findByText("noop")!, "click").run();
 			tracker.verify();
 		});
+		it("Calling a setter should not force react components to rerender that don't use keys when the new value is the same as the old one", async () => {
+			const tracker = new assert.CallTracker();
+			const Component1 = tracker.calls(ComponentStore, 1);
+			function Component2(): JSX.Element {
+				const [value, setValue] = store.useStore("number");
+				return (
+					<>
+						<button onClick={() => setValue(value)}>noop</button>
+					</>
+				);
+			}
+			function Component(): JSX.Element {
+				return (
+					<>
+						<Component1 />
+						<Component2 />
+					</>
+				);
+			}
+			await sb.render(<Component />).simulate(sb => sb.findByText("noop")!, "click").run();
+			tracker.verify();
+		});
 		it("Calling a setter should not force react components to rerender that use different key", async () => {
 			const tracker = new assert.CallTracker();
 			const Component1 = tracker.calls(ComponentString, 1);
@@ -459,9 +481,153 @@ sandbox(globalThis, sb => {
 			tracker.verify();
 		});
 	});
-
-	// TODO
-	describe("useStore()", () => {});
+	describe("useStore()", () => {
+		it("useStore() should return correct value", () => sb
+			.render(<ComponentStore />)
+			.equals(sb => sb.find("p")!.textContent, "{\"number\":1,\"string\":\"A\"}")
+			.run()
+		);
+		it("useStore() should always return the same reference to the setter callback", async () => {
+			let f, f1, f2;
+			function Component(): JSX.Element {
+				const [value, setValue] = store.useStore();
+				f = setValue;
+				return (
+					<>
+						<p>{JSON.stringify(value)}</p>
+						<button />
+					</>
+				);
+			}
+			await sb.render(<Component />).do(() => f1 = f).simulate(sb => sb.find("button")!, "click").do(() => f2 = f).run();
+			assert.equal(typeof f1, "function");
+			assert.equal(typeof f2, "function");
+			assert.equal(f1, f2);
+		});
+		it("Calling a setter should call callbacks registered through on() using a key", async () => {
+			const tracker = new assert.CallTracker();
+			const f = tracker.calls(() => {}, 1);
+			store.on("number", f);
+			await sb.render(<ComponentStore />).simulate(sb => sb.find("button")!, "click").run();
+			tracker.verify();
+		});
+		it("Calling a setter should call callbacks registered through on() without a key", async () => {
+			const tracker = new assert.CallTracker();
+			const f = tracker.calls(() => {}, 1);
+			store.on(f);
+			await sb.render(<ComponentStore />).simulate(sb => sb.find("button")!, "click").run();
+			tracker.verify();
+		});
+		it("Calling a setter should not call callbacks that were unregistered using a key", async () => {
+			const tracker = new assert.CallTracker();
+			const f = tracker.calls(() => {}, 1);
+			f();
+			store.on("number", f);
+			store.off("number", f);
+			await sb.render(<ComponentStore />).simulate(sb => sb.find("button")!, "click").run();
+			tracker.verify();
+		});
+		it("Calling a setter should not call callbacks that were unregistered without a key", async () => {
+			const tracker = new assert.CallTracker();
+			const f = tracker.calls(() => {}, 1);
+			f();
+			store.on(f);
+			store.off(f);
+			await sb.render(<ComponentStore />).simulate(sb => sb.find("button")!, "click").run();
+			tracker.verify();
+		});
+		it("Calling a setter should not call callbacks that use a key when the new value is the same as the old one", async () => {
+			const tracker = new assert.CallTracker();
+			const f = tracker.calls(() => {}, 1);
+			f();
+			store.on("number", f);
+			await sb.render(<ComponentStore noop={true} />).simulate(sb => sb.find("button")!, "click").run();
+			tracker.verify();
+		});
+		it("Calling a setter should not call callbacks that don't use keys when the new value is the same as the old one", async () => {
+			const tracker = new assert.CallTracker();
+			const f = tracker.calls(() => {}, 1);
+			f();
+			store.on(f);
+			await sb.render(<ComponentStore noop={true} />).simulate(sb => sb.find("button")!, "click").run();
+			tracker.verify();
+		});
+		it("Calling a setter should force react components to rerender and to update the rendered value", () => sb
+			.render(<ComponentStore />)
+			.simulate(sb => sb.find("button")!, "click")
+			.rerenders(2)
+			.equals(sb => sb.find("p")!.textContent, "{\"number\":2,\"string\":\"AB\"}")
+			.run()
+		);
+		it("Calling a setter should force react components to rerender that use a key and to update their rendered values", () => {
+			function Component(): JSX.Element {
+				return (
+					<>
+						<ComponentNumber />
+						<ComponentStore />
+					</>
+				);
+			}
+			return sb
+				.render(<Component />)
+				.equals(sb => sb.find(".num p")!.textContent, "1")
+				.simulate(sb => sb.find(".store button")!, "click")
+				.equals(sb => sb.find(".num p")!.textContent, "2")
+				.run();
+		});
+		it("Calling a setter should force react components to rerender that don't use keys and to update their rendered values", () => {
+			function Component(): JSX.Element {
+				return (
+					<>
+						<div className="store-1">
+							<ComponentStore />
+						</div>
+						<div className="store-2">
+							<ComponentStore />
+						</div>
+					</>
+				);
+			}
+			return sb
+				.render(<Component />)
+				.equals(sb => sb.find(".store-1 p")!.textContent, "{\"number\":1,\"string\":\"A\"}")
+				.simulate(sb => sb.find(".store-2 button")!, "click")
+				.equals(sb => sb.find(".store-1 p")!.textContent, "{\"number\":2,\"string\":\"AB\"}")
+				.run();
+		});
+		it("Calling a setter should not force react components to rerender that use a key when the new value is the same as the old one", async () => {
+			const tracker = new assert.CallTracker();
+			const Component1 = tracker.calls(ComponentNumber, 1);
+			function Component(): JSX.Element {
+				return (
+					<>
+						<ComponentStore noop={true} />
+						<Component1 />
+					</>
+				);
+			}
+			await sb.render(<Component />).simulate(sb => sb.find(".store button")!, "click").run();
+			tracker.verify();
+		});
+		it("Calling a setter should not force react components to rerender that don't use keys when the new value is the same as the old one", async () => {
+			const tracker = new assert.CallTracker();
+			const Component1 = tracker.calls(ComponentStore, 1);
+			function Component(): JSX.Element {
+				return (
+					<>
+						<div className="store-1">
+							<Component1 />
+						</div>
+						<div className="store-2">
+							<ComponentStore noop={true} />
+						</div>
+					</>
+				);
+			}
+			await sb.render(<Component />).simulate(sb => sb.find(".store-2 button")!, "click").run();
+			tracker.verify();
+		});
+	});
 	
 	// TODO
 	describe("on(key, listener)", () => {});
