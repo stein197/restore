@@ -26,12 +26,12 @@ function ComponentStore(props: {noop?: boolean;}): JSX.Element {
 	);
 }
 
-function ComponentNumber(): JSX.Element {
+function ComponentNumber(props: {noop?: boolean}): JSX.Element {
 	const [num, setNum] = store.useStore("number");
 	return (
 		<div className="num">
 			<p>{num}</p>
-			<button onClick={() => setNum(num + 1)}>setNum</button>
+			<button onClick={() => setNum(props.noop ? num : num + 1)}>setNum</button>
 		</div>
 	);
 }
@@ -628,11 +628,100 @@ sandbox(globalThis, sb => {
 			tracker.verify();
 		});
 	});
-	
-	// TODO
-	describe("on(key, listener)", () => {});
-
-	// TODO
+	describe("on(key, listener)", () => {
+		it("Should accept correct parameter and be called when calling setValue() with the same key", () => {
+			const [f, tracker] = createTracker(1);
+			store.on("number", f);
+			store.setValue("number", 10);
+			assert.equal(tracker.getCalls(f)[0].arguments[0], 10);
+			tracker.verify();
+		});
+		it("Should not be called when calling setValue() with the same key and the new value is the same as the old one", () => {
+			const [f, tracker] = createTracker(1);
+			store.on("number", f);
+			f();
+			store.setValue("number", store.getValue("number"));
+			tracker.verify();
+		});
+		it("Should not be called when calling setValue() with a different key", () => {
+			const [f, tracker] = createTracker(1);
+			store.on("number", f);
+			f();
+			store.setValue("string", "Hello, World!");
+			tracker.verify();
+		});
+		it("Should accept correct parameter and be called when calling setStore() with the same key", () => {
+			const [f, tracker] = createTracker(1);
+			store.on("number", f);
+			store.setStore({number: 10});
+			assert.equal(tracker.getCalls(f)[0].arguments[0], 10);
+			tracker.verify();
+		});
+		it("Should not be called when calling setStore() with the same key and the new value is the same as the old one", () => {
+			const [f, tracker] = createTracker(1);
+			store.on("number", f);
+			f();
+			store.setStore({number: store.getValue("number")});
+			tracker.verify();
+		});
+		it("Should not be called when calling setStore() with another keys", () => {
+			const [f, tracker] = createTracker(1);
+			store.on("number", f);
+			f();
+			store.setStore({string: "Hello, World!"});
+			tracker.verify();
+		});
+		it("Should accept correct parameter and be called when calling a key hook setter with the same key", async () => {
+			const [f, tracker] = createTracker(1);
+			store.on("number", f);
+			await sb.render(<ComponentNumber />).simulate(sb => sb.find("button")!, "click").run();
+			assert.equal(tracker.getCalls(f)[0].arguments[0], 2);
+			tracker.verify();
+		});
+		it("Should not be called when calling a key hook setter with the same key and the new value is the same as the old one", async () => {
+			const [f, tracker] = createTracker(1);
+			store.on("number", f);
+			f();
+			await sb.render(<ComponentNumber noop={true} />).simulate(sb => sb.find("button")!, "click").run();
+			tracker.verify();
+		});
+		it("Should not be called when calling a key hook setter() with a different key", async () => {
+			const [f, tracker] = createTracker(1);
+			store.on("number", f);
+			f();
+			await sb.render(<ComponentString />).simulate(sb => sb.find("button")!, "click").run();
+			tracker.verify();
+		});
+		it("Should accept correct parameter and be called when calling a store hook setter with the same key", async () => {
+			const [f, tracker] = createTracker(1);
+			store.on("number", f);
+			await sb.render(<ComponentStore />).simulate(sb => sb.find("button")!, "click").run();
+			assert.equal(tracker.getCalls(f)[0].arguments[0], 2);
+			tracker.verify();
+		});
+		it("Should not be called when calling a store hook setter with the same key and the new value is the same as the old one", async () => {
+			const [f, tracker] = createTracker(1);
+			store.on("number", f);
+			f();
+			await sb.render(<ComponentStore noop={true} />).simulate(sb => sb.find("button")!, "click").run();
+			tracker.verify();
+		});
+		it("Should not be called when calling a store hook setter with another keys", async () => {
+			const [f, tracker] = createTracker(1);
+			store.on("number", f);
+			f();
+			function Component(): JSX.Element {
+				const [value, setValue] = store.useStore();
+				return (
+					<>
+						<button onClick={() => setValue({string: "Hello, World!"})} />
+					</>
+				);
+			}
+			await sb.render(<Component />).simulate(sb => sb.find("button")!, "click").run();
+			tracker.verify();
+		});
+	});
 	describe("on(listener)", () => {});
 	
 	// TODO
@@ -641,3 +730,9 @@ sandbox(globalThis, sb => {
 	// TODO
 	describe("off(listener)", () => {});
 });
+
+function createTracker(calls: number): [() => void, assert.CallTracker] {
+	const tracker = new assert.CallTracker();
+	const f = tracker.calls(() => {}, calls);
+	return [f, tracker];
+}
