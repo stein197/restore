@@ -8,11 +8,13 @@ export = function createStore<T>(store: T): Store<T> {
 			store[key] = value as T[K];
 			store = {...store};
 			let listenerArray = listenerStore[key];
-			for (const listener of listenerArray)
-				listener(store[key]);
+			if (listenerArray)
+				for (const listener of listenerArray)
+					listener(store[key]);
 			listenerArray = listenerStore[""];
-			for (const listener of listenerArray)
-				listener(store);
+			if (listenerArray)
+				for (const listener of listenerArray)
+					listener(store);
 		} else {
 			store = {...store, ...value};
 			for (const k in listenerStore) {
@@ -55,7 +57,7 @@ export = function createStore<T>(store: T): Store<T> {
 			key = key ?? "";
 			const [state, setState] = React.useState(key ? store[key] : store);
 			const dispatch = React.useCallback((state: any) => updateStore(key as K, state), [key]);
-			React.useEffect((): () => void => {
+			React.useEffect(() => {
 				addListener(key, setState);
 				return () => removeListener(key, setState)
 			}, [key]);
