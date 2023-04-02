@@ -58,6 +58,15 @@ function ComponentBoth(): JSX.Element {
 	);
 }
 
+function ComponentNoop(): JSX.Element {
+	const [num, setNum] = store.useStore("number");
+	return (
+		<div className="noop">
+			<button onClick={() => setNum(num)} />
+		</div>
+	)
+}
+
 sandbox(globalThis, sb => {
 	beforeEach(() => {
 		store = createStore({...STORE_DEFAULT_VALUE})
@@ -157,6 +166,22 @@ sandbox(globalThis, sb => {
 			store.setValue("number", 10);
 			tracker.verify();
 		});
+		it("setValue() should not call callbacks that use the same key when the new value is the same as the old one", () => {
+			const tracker = new assert.CallTracker();
+			const f = tracker.calls(() => {}, 1);
+			f();
+			store.on("number", f);
+			store.setValue("number", store.getValue("number"));
+			tracker.verify();
+		});
+		it("setValue() should not call callbacks that don't use keys when the new value is the same as the old one", () => {
+			const tracker = new assert.CallTracker();
+			const f = tracker.calls(() => {}, 1);
+			f();
+			store.on(f);
+			store.setValue("number", store.getValue("number"));
+			tracker.verify();
+		});
 		it("setValue() should force react components to rerender that use the same key", () => sb
 			.render(<ComponentNumber />)
 			.do(() => store.setValue("number", 10))
@@ -230,6 +255,22 @@ sandbox(globalThis, sb => {
 			store.on(f);
 			store.off(f);
 			store.setStore({number: 10});
+			tracker.verify();
+		});
+		it("setStore() should not call callbacks that use the same key when the new value is the same as the old one", () => {
+			const tracker = new assert.CallTracker();
+			const f = tracker.calls(() => {}, 1);
+			f();
+			store.on("number", f);
+			store.setStore({...store.getStore()});
+			tracker.verify();
+		});
+		it("setStore() should not call callbacks that don't use keys when the new value is the same as the old one", () => {
+			const tracker = new assert.CallTracker();
+			const f = tracker.calls(() => {}, 1);
+			f();
+			store.on(f);
+			store.setStore({...store.getStore()});
 			tracker.verify();
 		});
 		it("setStore() should force react components to rerender that use a key", () => sb
@@ -324,6 +365,22 @@ sandbox(globalThis, sb => {
 			f();
 			store.on("string", f);
 			await sb.render(<ComponentNumber />).simulate(sb => sb.find("button")!, "click").run();
+			tracker.verify();
+		});
+		it("Calling a setter should not call callbacks that use the same key when the new value is the same as the old one", async () => {
+			const tracker = new assert.CallTracker();
+			const f = tracker.calls(() => {}, 1);
+			f();
+			store.on("number", f);
+			await sb.render(<ComponentNoop />).simulate(sb => sb.find("button")!, "click").run();
+			tracker.verify();
+		});
+		it("Calling a setter should not call callbacks that don't use keys when the new value is the same as the old one", async () => {
+			const tracker = new assert.CallTracker();
+			const f = tracker.calls(() => {}, 1);
+			f();
+			store.on(f);
+			await sb.render(<ComponentNoop />).simulate(sb => sb.find("button")!, "click").run();
 			tracker.verify();
 		});
 		it("Calling a setter should force react components to rerender and to update the rendered value", () => sb

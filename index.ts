@@ -5,6 +5,8 @@ export = function createStore<T>(store: T): Store<T> {
 	const listenerStore: any = {};
 	function updateStore<K extends keyof T>(key: K | "", value: T[K] | Partial<T>): void {
 		if (key) {
+			if (store[key] === value)
+				return;
 			store[key] = value as T[K];
 			store = {...store};
 			let listenerArray = listenerStore[key];
@@ -21,9 +23,9 @@ export = function createStore<T>(store: T): Store<T> {
 			store = {...store, ...value};
 			for (const k in listenerStore) {
 				const listenerArray = listenerStore[k];
-				for (const listener of listenerArray) {
-					listener(k ? store[k as K] : store);
-				}
+				if (listenerArray)
+					for (const listener of listenerArray)
+						listener(k ? store[k as K] : store);
 			}
 		}
 	}
