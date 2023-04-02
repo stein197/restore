@@ -722,7 +722,64 @@ sandbox(globalThis, sb => {
 			tracker.verify();
 		});
 	});
-	describe("on(listener)", () => {});
+	describe("on(listener)", () => {
+		it("Should accept correct parameter and be called when calling setValue()", () => {
+			const [f, tracker] = createTracker(1);
+			store.on(f);
+			store.setValue("number", 10);
+			assert.deepStrictEqual(tracker.getCalls(f)[0].arguments[0], {number: 10, string: "A"});
+			tracker.verify();
+		});
+		it("Should not be called when calling setValue() and the new value is the same as the old one", () => {
+			const [f, tracker] = createTracker(1);
+			store.on(f);
+			f();
+			store.setValue("number", store.getValue("number"));
+			tracker.verify();
+		});
+		it("Should accept correct parameter and be called when calling setStore()", () => {
+			const [f, tracker] = createTracker(1);
+			store.on(f);
+			store.setStore({number: 10});
+			assert.deepStrictEqual(tracker.getCalls(f)[0].arguments[0], {number: 10, string: "A"});
+			tracker.verify();
+		});
+		it("Should not be called when calling setStore() and the new value is the same as the old one", () => {
+			const [f, tracker] = createTracker(1);
+			store.on(f);
+			f();
+			store.setStore({...store.getStore()});
+			tracker.verify();
+		});
+		it("Should accept correct parameter and be called when calling a key hook setter with a key", async () => {
+			const [f, tracker] = createTracker(1);
+			store.on(f);
+			await sb.render(<ComponentNumber />).simulate(sb => sb.find("button")!, "click").run();
+			assert.deepStrictEqual(tracker.getCalls(f)[0].arguments[0], {number: 2, string: "A"});
+			tracker.verify();
+		});
+		it("Should not be called when calling a key hook setter with a key and the new value is the same as the old one", async () => {
+			const [f, tracker] = createTracker(1);
+			store.on(f);
+			f();
+			await sb.render(<ComponentNumber noop={true} />).simulate(sb => sb.find("button")!, "click").run();
+			tracker.verify();
+		});
+		it("Should accept correct parameter and be called when calling a store hook setter", async () => {
+			const [f, tracker] = createTracker(1);
+			store.on(f);
+			await sb.render(<ComponentStore />).simulate(sb => sb.find("button")!, "click").run();
+			assert.deepStrictEqual(tracker.getCalls(f)[0].arguments[0], {number: 2, string: "AB"});
+			tracker.verify();
+		});
+		it("Should not be called when calling a store hook setter and the new value is the same as the old one", async () => {
+			const [f, tracker] = createTracker(1);
+			store.on(f);
+			f();
+			await sb.render(<ComponentStore noop={true} />).simulate(sb => sb.find("button")!, "click").run();
+			tracker.verify();
+		});
+	});
 	
 	// TODO
 	describe("off(key, listener)", () => {});
