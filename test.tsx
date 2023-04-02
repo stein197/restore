@@ -36,6 +36,16 @@ function ComponentNumber(): JSX.Element {
 	);
 }
 
+function ComponentString(): JSX.Element {
+	const [str, setStr] = store.useStore("string");
+	return (
+		<>
+			<p>{str}</p>
+			<button onClick={() => setStr(str + String.fromCharCode(str.charCodeAt(str.length - 1) + 1))}>setStr</button>
+		</>
+	);
+}
+
 sandbox(globalThis, sb => {
 	beforeEach(() => {
 		store = createStore({...STORE_DEFAULT_VALUE})
@@ -63,7 +73,6 @@ sandbox(globalThis, sb => {
 			assert.equal(store.getValue("number"), 2);
 		});
 	});
-
 	describe("getStore()", () => {
 		it("Should return correct value after initialization", () => {
 			assert.deepStrictEqual(store.getStore(), STORE_DEFAULT_VALUE);
@@ -87,9 +96,80 @@ sandbox(globalThis, sb => {
 			assert.deepStrictEqual(store.getStore(), {...STORE_DEFAULT_VALUE, number: 2});
 		});
 	});
-	
-	// TODO
-	describe("setValue()", () => {});
+	describe("setValue()", () => {
+		it("getValue() should return correct result after calling setValue()", () => {
+			store.setValue("number", 10);
+			assert.equal(store.getValue("number"), 10);
+		});
+		it("getStore() should return correct result after calling setValue()", () => {
+			store.setValue("number", 10);
+			assert.deepStrictEqual(store.getStore(), {...STORE_DEFAULT_VALUE, number: 10});
+		});
+		it("setValue() should call callbacks registered through on() using the same key", () => {
+			const tracker = new assert.CallTracker();
+			const f = tracker.calls(() => {}, 1);
+			store.on("number", f);
+			store.setValue("number", 10);
+			tracker.verify();
+		});
+		it("setValue() should call callbacks registered through on() without a key", () => {
+			const tracker = new assert.CallTracker();
+			const f = tracker.calls(() => {}, 1);
+			store.on(f);
+			store.setValue("number", 10);
+			tracker.verify();
+		});
+		it("setValue() should not call callbacks registered through on() using a different key", () => {
+			const tracker = new assert.CallTracker();
+			const f = tracker.calls(() => {}, 1);
+			f();
+			store.on("string", f);
+			store.setValue("number", 10);
+			tracker.verify();
+		});
+		it("setValue() should not call callbacks that were unregistered from the same key", () => {
+			const tracker = new assert.CallTracker();
+			const f = tracker.calls(() => {}, 1);
+			f();
+			store.on("number", f);
+			store.off("number", f);
+			store.setValue("number", 10);
+			tracker.verify();
+		});
+		it("setValue() should not call callbacks that were unregistered from wihtout a key", () => {
+			const tracker = new assert.CallTracker();
+			const f = tracker.calls(() => {}, 1);
+			f();
+			store.on(f);
+			store.off(f);
+			store.setValue("number", 10);
+			tracker.verify();
+		});
+		it("setValue() should force react components to rerender that use the same key", () => sb
+			.render(<ComponentNumber />)
+			.do(() => store.setValue("number", 10))
+			.rerenders(2)
+			.run()
+		);
+		it("setValue() should force react components to rerender that don't use keys", () => sb
+			.render(<ComponentStore />)
+			.do(() => store.setValue("number", 10))
+			.rerenders(2)
+			.run()
+		);
+		it("setValue() should not force react components to rerender that yse the same key when the new value is the same as the old one", () => sb
+			.render(<ComponentNumber />)
+			.do(() => store.setValue("number", store.getValue("number")))
+			.rerenders(1)
+			.run()
+		);
+		it("setValue() should not force react components to rerender that use different key", () => sb
+			.render(<ComponentString />)
+			.do(() => store.setValue("number", 10))
+			.rerenders(1)
+			.run()
+		);
+	});
 	
 	// TODO
 	describe("setStore()", () => {});
