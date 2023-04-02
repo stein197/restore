@@ -16,6 +16,8 @@ export = function createStore<T>(store: T): Store<T> {
 				for (const listener of listenerArray)
 					listener(store);
 		} else {
+			if (shallowlyEqual(store, value))
+				return;
 			store = {...store, ...value};
 			for (const k in listenerStore) {
 				const listenerArray = listenerStore[k];
@@ -78,6 +80,15 @@ function getKeyAndListener(a: any, b: any): [string, () => void] {
 	const key = typeof a === "string" && b ? a : "";
 	const listener = typeof a === "function" ? a : b;
 	return [key, listener];
+}
+
+function shallowlyEqual(a: any, b: any): boolean {
+	if (Object.keys(a).length !== Object.keys(b).length)
+		return false;
+	for (const k in a)
+		if (a[k] != b[k])
+			return false;
+	return true;
 }
 
 /**

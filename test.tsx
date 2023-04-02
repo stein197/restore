@@ -46,6 +46,18 @@ function ComponentString(): JSX.Element {
 	);
 }
 
+function ComponentBoth(): JSX.Element {
+	const [num, setNum] = store.useStore("number");
+	const [str, setStr] = store.useStore("string");
+	return (
+		<>
+			<p>{num}</p>
+			<p>{str}</p>
+			<button onClick={() => (setNum(num + 1), setStr(str + String.fromCharCode(str.charCodeAt(str.length - 1) + 1)))}>setStore</button>
+		</>
+	);
+}
+
 sandbox(globalThis, sb => {
 	beforeEach(() => {
 		store = createStore({...STORE_DEFAULT_VALUE})
@@ -136,7 +148,7 @@ sandbox(globalThis, sb => {
 			store.setValue("number", 10);
 			tracker.verify();
 		});
-		it("setValue() should not call callbacks that were unregistered from wihtout a key", () => {
+		it("setValue() should not call callbacks that were unregistered from without a key", () => {
 			const tracker = new assert.CallTracker();
 			const f = tracker.calls(() => {}, 1);
 			f();
@@ -157,7 +169,16 @@ sandbox(globalThis, sb => {
 			.rerenders(2)
 			.run()
 		);
-		it("setValue() should not force react components to rerender that yse the same key when the new value is the same as the old one", () => sb
+		it("setValue() should force react components to rerender only once when the components use multiple keys", () => sb
+			.render(<ComponentBoth />)
+			.do(() => {
+				store.setValue("number", 10);
+				store.setValue("string", "Hello, World!");
+			})
+			.rerenders(2)
+			.run()
+		);
+		it("setValue() should not force react components to rerender that use the same key when the new value is the same as the old one", () => sb
 			.render(<ComponentNumber />)
 			.do(() => store.setValue("number", store.getValue("number")))
 			.rerenders(1)
@@ -170,9 +191,78 @@ sandbox(globalThis, sb => {
 			.run()
 		);
 	});
-	
-	// TODO
-	describe("setStore()", () => {});
+	describe("setStore()", () => {
+		it("getValue() should return correct result after calling setStore()", () => {
+			store.setStore({number: 10});
+			assert.equal(store.getValue("number"), 10);
+		});
+		it("getStore() should return correct result after calling setStore()", () => {
+			store.setStore({number: 10});
+			assert.deepStrictEqual(store.getStore(), {...STORE_DEFAULT_VALUE, number: 10});
+		});
+		it("setStore() should call callbacks registered through on() using a key", () => {
+			const tracker = new assert.CallTracker();
+			const f = tracker.calls(() => {}, 1);
+			store.on("string", f);
+			store.setStore({number: 10});
+			tracker.verify();
+		});
+		it("setStore() should call callbacks registered through on() without a key", () => {
+			const tracker = new assert.CallTracker();
+			const f = tracker.calls(() => {}, 1);
+			store.on(f);
+			store.setStore({number: 10});
+			tracker.verify();
+		});
+		it("setStore() should not call callbacks that were unregistered from a key", () => {
+			const tracker = new assert.CallTracker();
+			const f = tracker.calls(() => {}, 1);
+			f();
+			store.on("string", f);
+			store.off("string", f);
+			store.setStore({number: 10});
+			tracker.verify();
+		});
+		it("setStore() should not call callbacks that were unregistered from without a key", () => {
+			const tracker = new assert.CallTracker();
+			const f = tracker.calls(() => {}, 1);
+			f();
+			store.on(f);
+			store.off(f);
+			store.setStore({number: 10});
+			tracker.verify();
+		});
+		it("setStore() should force react components to rerender that use a key", () => sb
+			.render(<ComponentNumber />)
+			.do(() => store.setStore({number: 10}))
+			.rerenders(2)
+			.run()
+		);
+		it("setStore() should force react components to rerender that don't use keys", () => sb
+			.render(<ComponentStore />)
+			.do(() => store.setStore({number: 10}))
+			.rerenders(2)
+			.run()
+		);
+		it("setStore() should force react components to rerender only once when the components use multiple keys", () => sb
+			.render(<ComponentBoth />)
+			.do(() => store.setStore({number: 10, string: "Hello, World!"}))
+			.rerenders(2)
+			.run()
+		);
+		it("setStore() should not force react components to rerender that use a key when the new store is the same as the old one", () => sb
+			.render(<ComponentNumber />)
+			.do(() => store.setStore({...store.getStore()}))
+			.rerenders(1)
+			.run()
+		);
+		it("setStore() should not force react components to rerender that don't use keys when the new store is the same as the old one", () => sb
+			.render(<ComponentStore />)
+			.do(() => store.setStore({...store.getStore()}))
+			.rerenders(1)
+			.run()
+		);
+	});
 	
 	// TOD
 	describe("useStore()", () => {});
