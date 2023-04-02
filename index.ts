@@ -97,7 +97,7 @@ type Store<T> = {
 	getStore(): T;
 
 	/**
-	 * Sets a value.
+	 * Sets a value by a key.
 	 * @param key Store key.
 	 * @param value Store value.
 	 */
@@ -110,13 +110,13 @@ type Store<T> = {
 	setStore(store: Partial<T>): void;
 
 	/**
-	 * Hook that watches after store changes.
+	 * Hook that watches after store changes made to an entry specified by a key.
 	 * @param key Key to watch.
 	 */
 	useStore<K extends keyof T>(key: K): [store: T[K], setStore: (store: T[K]) => void];
 
 	/**
-	 * Hook that watches after store changes.
+	 * Hook that watches after a whole store changes.
 	 */
 	useStore(): [store: T, setStore: (store: Partial<T>) => void];
 
@@ -128,7 +128,7 @@ type Store<T> = {
 	on<K extends keyof T>(key: K, listener: (value: T[K]) => void): void;
 
 	/**
-	 * Subscribe on every store changes.
+	 * Subscribe on every store change.
 	 * @param listener Listener.
 	 */
 	on(listener: (value: T) => void): void;
@@ -141,7 +141,7 @@ type Store<T> = {
 	off<K extends keyof T>(key: K, listener: (value: T[K]) => void): void;
 
 	/**
-	 * Unsubscribe off every store changes.
+	 * Unsubscribe off every store change.
 	 * @param listener Listener.
 	 */
 	off(listener: (value: T) => void): void;
