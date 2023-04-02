@@ -265,14 +265,20 @@ sandbox(globalThis, sb => {
 	});
 	
 	// TOD
-	describe("useStore()", () => {});
+	describe("useStore(key)", () => {});
 
 	// TODO
 	describe("useStore()", () => {});
 	
 	// TODO
-	describe("on()", () => {});
+	describe("on(key, listener)", () => {});
+
+	// TODO
+	describe("on(listener)", () => {});
 	
 	// TODO
-	describe("off()", () => {});
+	describe("off(key, listener)", () => {});
+
+	// TODO
+	describe("off(listener)", () => {});
 });
