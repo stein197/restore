@@ -56,7 +56,7 @@ export = function createStore<T>(store: T): Store<T> {
 		useStore<K extends keyof T>(key?: K | ""): any {
 			key = key ?? "";
 			const [state, setState] = React.useState(key ? store[key] : store);
-			const dispatch = React.useCallback((state: any) => updateStore(key as K, state), [key]);
+			const dispatch = React.useCallback((value: any) => updateStore(key as K, value), [key]);
 			React.useEffect(() => {
 				addListener(key, setState);
 				return () => removeListener(key, setState)

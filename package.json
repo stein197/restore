@@ -24,7 +24,7 @@
   },
   "homepage": "https://github.com/stein197/restore#readme",
   "devDependencies": {
-    "@stein197/mocha-sandbox": "github:stein197/mocha-sandbox",
+    "@stein197/test-sandbox": "github:stein197/js-test-sandbox",
     "@types/mocha": "^10.0.1",
     "@types/node": "^18.15.5",
     "@types/react": "^18.0.28",
