@@ -67,7 +67,7 @@ function ComponentNoop(): JSX.Element {
 	)
 }
 
-sandbox(globalThis, sb => {
+sandbox.go(globalThis, sb => {
 	beforeEach(() => {
 		store = createStore({...STORE_DEFAULT_VALUE})
 	});
