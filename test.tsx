@@ -780,12 +780,28 @@ sandbox(globalThis, sb => {
 			tracker.verify();
 		});
 	});
-	
-	// TODO
-	describe("off(key, listener)", () => {});
-
-	// TODO
-	describe("off(listener)", () => {});
+	describe("off(key, listener)", () => {
+		it("Should not call listener after unsubscribing it", () => {
+			const [f, tracker] = createTracker(1);
+			store.on("number", f);
+			store.off("number", f);
+			f();
+			store.setValue("number", 10);
+			store.setStore({number: 20});
+			tracker.verify();
+		});
+	});
+	describe("off(listener)", () => {
+		it("Should not call listener after unsubscribing it", () => {
+			const [f, tracker] = createTracker(1);
+			store.on(f);
+			store.off(f);
+			f();
+			store.setValue("number", 10);
+			store.setStore({number: 20});
+			tracker.verify();
+		});
+	});
 });
 
 function createTracker(calls: number): [() => void, assert.CallTracker] {
