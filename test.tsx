@@ -10,7 +10,7 @@ const STORE_DEFAULT_VALUE = {
 
 let store = createStore({...STORE_DEFAULT_VALUE});
 
-function ComponentStore(props: {noop?: boolean;}): JSX.Element {
+function ComponentStore(props: {noop?: boolean; changeKey?: "string" | "number";}): JSX.Element {
 	const CHAR_CODE_START = 65
 	const [value, setValue] = store.useStore();
 	const nextNumber = value.number + 1;
@@ -18,10 +18,18 @@ function ComponentStore(props: {noop?: boolean;}): JSX.Element {
 	return (
 		<div className="store">
 			<p>{JSON.stringify(value)}</p>
-			<button onClick={() => props.noop ? setValue({...value}) : setValue({
-				number: nextNumber,
-				string: value.string + nextChar
-			})}>setStore</button>
+			<button onClick={() => {
+				if (props.noop)
+					setValue({...value});
+				else if (props.changeKey)
+					setValue({
+						[props.changeKey]: props.changeKey === "number" ? nextNumber : value.string + nextChar
+					});
+				else setValue({
+					number: nextNumber,
+					string: value.string + nextChar
+				});
+			}}>setStore</button>
 		</div>
 	);
 }
@@ -251,6 +259,15 @@ sandbox.go(globalThis, sb => {
 			store.setStore({...store.getStore()});
 			assert.equal(tracker.calls, 0);
 		});
+		it("setStore() should not call callbacks that were subscribed on keys, whose values weren't changed", () => {
+			const tracker1 = sandbox.track(() => {});
+			const tracker2 = sandbox.track(() => {});
+			store.on("number", tracker1.f);
+			store.on("string", tracker2.f);
+			store.setStore({number: 10});
+			assert.equal(tracker1.calls, 1);
+			assert.equal(tracker2.calls, 0);
+		});
 		it("setStore() should force react components to rerender that use a key", () => sb
 			.render(<ComponentNumber />)
 			.do(() => store.setStore({number: 10}))
@@ -278,6 +295,12 @@ sandbox.go(globalThis, sb => {
 		it("setStore() should not force react components to rerender that don't use keys when the new store is the same as the old one", () => sb
 			.render(<ComponentStore />)
 			.do(() => store.setStore({...store.getStore()}))
+			.rerenders(1)
+			.run()
+		);
+		it("setStore() should not force react components to rerender that were subscribed on keys, whose values weren't changed", () => sb
+			.render(<ComponentString />)
+			.do(() => store.setStore({number: 10}))
 			.rerenders(1)
 			.run()
 		);
@@ -508,6 +531,18 @@ sandbox.go(globalThis, sb => {
 			await sb.render(<ComponentStore noop={true} />).simulate(sb => sb.find("button")!, "click").run();
 			assert.equal(tracker.calls, 0);
 		});
+		it("Calling a setter should not call callbacks that were subscribed on keys, whose values weren't changed", async () => {
+			const tracker1 = sandbox.track(() => {});
+			const tracker2 = sandbox.track(() => {});
+			store.on("number", tracker1.f);
+			store.on("string", tracker2.f);
+			await sb
+				.render(<ComponentStore changeKey="number" />)
+				.simulate(sb => sb.find("button")!, "click")
+				.run();
+			assert.equal(tracker1.calls, 1);
+			assert.equal(tracker2.calls, 0);
+		});
 		it("Calling a setter should force react components to rerender and to update the rendered value", () => sb
 			.render(<ComponentStore />)
 			.simulate(sb => sb.find("button")!, "click")
@@ -581,6 +616,23 @@ sandbox.go(globalThis, sb => {
 				);
 			}
 			await sb.render(<Component />).simulate(sb => sb.find(".store-2 button")!, "click").run();
+			assert.equal(tracker.calls, 1);
+		});
+		it("Calling a setter should not force react components to rerender that were subscribed on keys, whose values weren't changed", async () => {
+			const tracker = sandbox.track(ComponentString);
+			const Component1 = tracker.f;
+			function Component(): JSX.Element {
+				return (
+					<>
+						<Component1 />
+						<ComponentStore changeKey="number" />
+					</>
+				);
+			}
+			await sb
+				.render(<Component />)
+				.simulate(sb => sb.find(".store button")!, "click")
+				.run()
 			assert.equal(tracker.calls, 1);
 		});
 	});
