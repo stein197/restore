@@ -105,7 +105,7 @@ function shallowlyEqual(a: any, b: any): boolean {
 type Store<T> = {
 
 	/**
-	 * Returns a value by key.
+	 * Retrieves a value from the store by a key.
 	 * @param key Store key.
 	 */
 	getValue<K extends keyof T>(key: K): T[K];
@@ -140,7 +140,7 @@ type Store<T> = {
 	useStore(): [store: T, setStore: (store: Partial<T>) => void];
 
 	/**
-	 * Subscribe on key changes.
+	 * Subscribe on value changes by a key.
 	 * @param key Store key.
 	 * @param listener Listener.
 	 */
@@ -153,7 +153,7 @@ type Store<T> = {
 	on(listener: (value: T) => void): void;
 
 	/**
-	 * Unsubscribe off key changes.
+	 * Unsubscribe off value changes by a key.
 	 * @param key Store key.
 	 * @param listener Listener.
 	 */
