@@ -19,12 +19,18 @@ export = function createStore<T>(store: T): Store<T> {
 		} else {
 			if (shallowlyEqual(store, value))
 				return;
-			for (const k in value as any)
+			const updatedKeys: string[] = [];
+			for (const k in value as any) {
+				if (store[k as K] !== (value as T)[k as K])
+					updatedKeys.push(k);
 				store[k as K] = (value as T)[k as K];
+			}
 			for (const k in listenerStore) {
 				const listenerArray = listenerStore[k];
-				if (listenerArray)
-					for (const listener of listenerArray)
+				if (!listenerArray)
+					continue;
+				for (const listener of listenerArray)
+					if (!k || updatedKeys.includes(k))
 						listener(k ? store[k as K] : store);
 			}
 		}
