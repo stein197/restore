@@ -127,60 +127,48 @@ sandbox.go(globalThis, sb => {
 			assert.deepStrictEqual(store.getStore(), {...STORE_DEFAULT_VALUE, number: 10});
 		});
 		it("setValue() should call callbacks registered through on() using the same key", () => {
-			const tracker = new assert.CallTracker();
-			const f = tracker.calls(() => {}, 1);
-			store.on("number", f);
+			const tracker = sandbox.track(() => {});
+			store.on("number", tracker.f);
 			store.setValue("number", 10);
-			tracker.verify();
+			assert.equal(tracker.calls, 1);
 		});
 		it("setValue() should call callbacks registered through on() without a key", () => {
-			const tracker = new assert.CallTracker();
-			const f = tracker.calls(() => {}, 1);
-			store.on(f);
+			const tracker = sandbox.track(() => {});
+			store.on(tracker.f);
 			store.setValue("number", 10);
-			tracker.verify();
+			assert.equal(tracker.calls, 1);
 		});
 		it("setValue() should not call callbacks registered through on() using a different key", () => {
-			const tracker = new assert.CallTracker();
-			const f = tracker.calls(() => {}, 1);
-			f();
-			store.on("string", f);
+			const tracker = sandbox.track(() => {});
+			store.on("string", tracker.f);
 			store.setValue("number", 10);
-			tracker.verify();
+			assert.equal(tracker.calls, 0);
 		});
 		it("setValue() should not call callbacks that were unregistered from the same key", () => {
-			const tracker = new assert.CallTracker();
-			const f = tracker.calls(() => {}, 1);
-			f();
-			store.on("number", f);
-			store.off("number", f);
+			const tracker = sandbox.track(() => {});
+			store.on("number", tracker.f);
+			store.off("number", tracker.f);
 			store.setValue("number", 10);
-			tracker.verify();
+			assert.equal(tracker.calls, 0);
 		});
 		it("setValue() should not call callbacks that were unregistered from without a key", () => {
-			const tracker = new assert.CallTracker();
-			const f = tracker.calls(() => {}, 1);
-			f();
-			store.on(f);
-			store.off(f);
+			const tracker = sandbox.track(() => {});
+			store.on(tracker.f);
+			store.off(tracker.f);
 			store.setValue("number", 10);
-			tracker.verify();
+			assert.equal(tracker.calls, 0);
 		});
 		it("setValue() should not call callbacks that use the same key when the new value is the same as the old one", () => {
-			const tracker = new assert.CallTracker();
-			const f = tracker.calls(() => {}, 1);
-			f();
-			store.on("number", f);
+			const tracker = sandbox.track(() => {});
+			store.on("number", tracker.f);
 			store.setValue("number", store.getValue("number"));
-			tracker.verify();
+			assert.equal(tracker.calls, 0);
 		});
 		it("setValue() should not call callbacks that don't use keys when the new value is the same as the old one", () => {
-			const tracker = new assert.CallTracker();
-			const f = tracker.calls(() => {}, 1);
-			f();
-			store.on(f);
+			const tracker = sandbox.track(() => {});
+			store.on(tracker.f);
 			store.setValue("number", store.getValue("number"));
-			tracker.verify();
+			assert.equal(tracker.calls, 0);
 		});
 		it("setValue() should force react components to rerender that use the same key", () => sb
 			.render(<ComponentNumber />)
@@ -226,52 +214,42 @@ sandbox.go(globalThis, sb => {
 			assert.deepStrictEqual(store.getStore(), {...STORE_DEFAULT_VALUE, number: 10});
 		});
 		it("setStore() should call callbacks registered through on() using a key", () => {
-			const tracker = new assert.CallTracker();
-			const f = tracker.calls(() => {}, 1);
-			store.on("string", f);
+			const tracker = sandbox.track(() => {});
+			store.on("string", tracker.f);
 			store.setStore({number: 10});
-			tracker.verify();
+			assert.equal(tracker.calls, 1);
 		});
 		it("setStore() should call callbacks registered through on() without a key", () => {
-			const tracker = new assert.CallTracker();
-			const f = tracker.calls(() => {}, 1);
-			store.on(f);
+			const tracker = sandbox.track(() =>{});
+			store.on(tracker.f);
 			store.setStore({number: 10});
-			tracker.verify();
+			assert.equal(tracker.calls, 1);
 		});
 		it("setStore() should not call callbacks that were unregistered from a key", () => {
-			const tracker = new assert.CallTracker();
-			const f = tracker.calls(() => {}, 1);
-			f();
-			store.on("string", f);
-			store.off("string", f);
+			const tracker = sandbox.track(() => {});
+			store.on("number", tracker.f);
+			store.off("number", tracker.f);
 			store.setStore({number: 10});
-			tracker.verify();
+			assert.equal(tracker.calls, 0);
 		});
 		it("setStore() should not call callbacks that were unregistered from without a key", () => {
-			const tracker = new assert.CallTracker();
-			const f = tracker.calls(() => {}, 1);
-			f();
-			store.on(f);
-			store.off(f);
+			const tracker = sandbox.track(() => {});
+			store.on(tracker.f);
+			store.off(tracker.f);
 			store.setStore({number: 10});
-			tracker.verify();
+			assert.equal(tracker.calls, 0);
 		});
 		it("setStore() should not call callbacks that use the same key when the new value is the same as the old one", () => {
-			const tracker = new assert.CallTracker();
-			const f = tracker.calls(() => {}, 1);
-			f();
-			store.on("number", f);
+			const tracker = sandbox.track(() => {});
+			store.on("number", tracker.f);
 			store.setStore({...store.getStore()});
-			tracker.verify();
+			assert.equal(tracker.calls, 0);
 		});
 		it("setStore() should not call callbacks that don't use keys when the new value is the same as the old one", () => {
-			const tracker = new assert.CallTracker();
-			const f = tracker.calls(() => {}, 1);
-			f();
-			store.on(f);
+			const tracker = sandbox.track(() => {});
+			store.on(tracker.f);
 			store.setStore({...store.getStore()});
-			tracker.verify();
+			assert.equal(tracker.calls, 0);
 		});
 		it("setStore() should force react components to rerender that use a key", () => sb
 			.render(<ComponentNumber />)
@@ -328,60 +306,48 @@ sandbox.go(globalThis, sb => {
 			assert.equal(f1, f2);
 		});
 		it("Calling a setter should call callbacks registered through on() using the same key", async () => {
-			const tracker = new assert.CallTracker();
-			const f = tracker.calls(() => {}, 1);
-			store.on("number", f);
+			const tracker = sandbox.track(() => {});
+			store.on("number", tracker.f);
 			await sb.render(<ComponentNumber />).simulate(sb => sb.find("button")!, "click").run();
-			tracker.verify();
+			assert.equal(tracker.calls, 1);
 		});
 		it("Calling a setter should call callbacks registered through on() without a key", async () => {
-			const tracker = new assert.CallTracker();
-			const f = tracker.calls(() => {}, 1);
-			store.on(f);
+			const tracker = sandbox.track(() => {});
+			store.on(tracker.f);
 			await sb.render(<ComponentNumber />).simulate(sb => sb.find("button")!, "click").run();
-			tracker.verify();
+			assert.equal(tracker.calls, 1);
 		});
 		it("Calling a setter should not call callbacks that were unregistered using the same key", async () => {
-			const tracker = new assert.CallTracker();
-			const f = tracker.calls(() => {}, 1);
-			f();
-			store.on("number", f);
-			store.off("number", f);
+			const tracker = sandbox.track(() => {});
+			store.on("number", tracker.f);
+			store.off("number", tracker.f);
 			await sb.render(<ComponentNumber />).simulate(sb => sb.find("button")!, "click").run();
-			tracker.verify();
+			assert.equal(tracker.calls, 0);
 		});
 		it("Calling a setter should not call callbacks that were unregistered without a key", async () => {
-			const tracker = new assert.CallTracker();
-			const f = tracker.calls(() => {}, 1);
-			f();
-			store.on(f);
-			store.off(f);
+			const tracker = sandbox.track(() => {});
+			store.on(tracker.f);
+			store.off(tracker.f);
 			await sb.render(<ComponentNumber />).simulate(sb => sb.find("button")!, "click").run();
-			tracker.verify();
+			assert.equal(tracker.calls, 0);
 		});
 		it("Calling a setter should not call callbacks that were registered throught on() using a different key", async () => {
-			const tracker = new assert.CallTracker();
-			const f = tracker.calls(() => {}, 1);
-			f();
-			store.on("string", f);
+			const tracker = sandbox.track(() => {});
+			store.on("string", tracker.f);
 			await sb.render(<ComponentNumber />).simulate(sb => sb.find("button")!, "click").run();
-			tracker.verify();
+			assert.equal(tracker.calls, 0);
 		});
 		it("Calling a setter should not call callbacks that use the same key when the new value is the same as the old one", async () => {
-			const tracker = new assert.CallTracker();
-			const f = tracker.calls(() => {}, 1);
-			f();
-			store.on("number", f);
+			const tracker = sandbox.track(() => {});
+			store.on("number", tracker.f);
 			await sb.render(<ComponentNoop />).simulate(sb => sb.find("button")!, "click").run();
-			tracker.verify();
+			assert.equal(tracker.calls, 0);
 		});
 		it("Calling a setter should not call callbacks that don't use keys when the new value is the same as the old one", async () => {
-			const tracker = new assert.CallTracker();
-			const f = tracker.calls(() => {}, 1);
-			f();
-			store.on(f);
+			const tracker = sandbox.track(() => {});
+			store.on(tracker.f);
 			await sb.render(<ComponentNoop />).simulate(sb => sb.find("button")!, "click").run();
-			tracker.verify();
+			assert.equal(tracker.calls, 0);
 		});
 		it("Calling a setter should force react components to rerender and to update the rendered value", () => sb
 			.render(<ComponentNumber />)
@@ -423,7 +389,6 @@ sandbox.go(globalThis, sb => {
 				.run();
 		});
 		it("Calling a setter should not force react components to rerender that use the same key when the new value is the same as the old one", async () => {
-			const tracker = new assert.CallTracker();
 			function Component1(): JSX.Element {
 				const [value, setValue] = store.useStore("number");
 				return (
@@ -432,7 +397,8 @@ sandbox.go(globalThis, sb => {
 					</>
 				);
 			}
-			const Component2 = tracker.calls(ComponentNumber, 1);
+			const tracker = sandbox.track(ComponentNumber);
+			const Component2 = tracker.f;
 			function Component(): JSX.Element {
 				return (
 					<>
@@ -442,11 +408,11 @@ sandbox.go(globalThis, sb => {
 				);
 			}
 			await sb.render(<Component />).simulate(sb => sb.findByText("noop")!, "click").run();
-			tracker.verify();
+			assert.equal(tracker.calls, 1);
 		});
 		it("Calling a setter should not force react components to rerender that don't use keys when the new value is the same as the old one", async () => {
-			const tracker = new assert.CallTracker();
-			const Component1 = tracker.calls(ComponentStore, 1);
+			const tracker = sandbox.track(ComponentStore);
+			const Component1 = tracker.f;
 			function Component2(): JSX.Element {
 				const [value, setValue] = store.useStore("number");
 				return (
@@ -464,11 +430,11 @@ sandbox.go(globalThis, sb => {
 				);
 			}
 			await sb.render(<Component />).simulate(sb => sb.findByText("noop")!, "click").run();
-			tracker.verify();
+			assert.equal(tracker.calls, 1);
 		});
 		it("Calling a setter should not force react components to rerender that use different key", async () => {
-			const tracker = new assert.CallTracker();
-			const Component1 = tracker.calls(ComponentString, 1);
+			const tracker = sandbox.track(ComponentString);
+			const Component1 = tracker.f;
 			function Component(): JSX.Element {
 				return (
 					<>
@@ -478,7 +444,7 @@ sandbox.go(globalThis, sb => {
 				);
 			}
 			await sb.render(<Component />).simulate(sb => sb.find(".num button")!, "click").run();
-			tracker.verify();
+			assert.equal(tracker.calls, 1);
 		});
 	});
 	describe("useStore()", () => {
@@ -505,52 +471,42 @@ sandbox.go(globalThis, sb => {
 			assert.equal(f1, f2);
 		});
 		it("Calling a setter should call callbacks registered through on() using a key", async () => {
-			const tracker = new assert.CallTracker();
-			const f = tracker.calls(() => {}, 1);
-			store.on("number", f);
+			const tracker = sandbox.track(() => {});
+			store.on("number", tracker.f);
 			await sb.render(<ComponentStore />).simulate(sb => sb.find("button")!, "click").run();
-			tracker.verify();
+			assert.equal(tracker.calls, 1);
 		});
 		it("Calling a setter should call callbacks registered through on() without a key", async () => {
-			const tracker = new assert.CallTracker();
-			const f = tracker.calls(() => {}, 1);
-			store.on(f);
+			const tracker = sandbox.track(() => {});
+			store.on(tracker.f);
 			await sb.render(<ComponentStore />).simulate(sb => sb.find("button")!, "click").run();
-			tracker.verify();
+			assert.equal(tracker.calls, 1);
 		});
 		it("Calling a setter should not call callbacks that were unregistered using a key", async () => {
-			const tracker = new assert.CallTracker();
-			const f = tracker.calls(() => {}, 1);
-			f();
-			store.on("number", f);
-			store.off("number", f);
+			const tracker = sandbox.track(() => {});
+			store.on("number", tracker.f);
+			store.off("number", tracker.f);
 			await sb.render(<ComponentStore />).simulate(sb => sb.find("button")!, "click").run();
-			tracker.verify();
+			assert.equal(tracker.calls, 0);
 		});
 		it("Calling a setter should not call callbacks that were unregistered without a key", async () => {
-			const tracker = new assert.CallTracker();
-			const f = tracker.calls(() => {}, 1);
-			f();
-			store.on(f);
-			store.off(f);
+			const tracker = sandbox.track(() => {});
+			store.on(tracker.f);
+			store.off(tracker.f);
 			await sb.render(<ComponentStore />).simulate(sb => sb.find("button")!, "click").run();
-			tracker.verify();
+			assert.equal(tracker.calls, 0);
 		});
 		it("Calling a setter should not call callbacks that use a key when the new value is the same as the old one", async () => {
-			const tracker = new assert.CallTracker();
-			const f = tracker.calls(() => {}, 1);
-			f();
-			store.on("number", f);
+			const tracker = sandbox.track(() => {});
+			store.on("number", tracker.f);
 			await sb.render(<ComponentStore noop={true} />).simulate(sb => sb.find("button")!, "click").run();
-			tracker.verify();
+			assert.equal(tracker.calls, 0);
 		});
 		it("Calling a setter should not call callbacks that don't use keys when the new value is the same as the old one", async () => {
-			const tracker = new assert.CallTracker();
-			const f = tracker.calls(() => {}, 1);
-			f();
-			store.on(f);
+			const tracker = sandbox.track(() => {});
+			store.on(tracker.f);
 			await sb.render(<ComponentStore noop={true} />).simulate(sb => sb.find("button")!, "click").run();
-			tracker.verify();
+			assert.equal(tracker.calls, 0);
 		});
 		it("Calling a setter should force react components to rerender and to update the rendered value", () => sb
 			.render(<ComponentStore />)
@@ -596,8 +552,8 @@ sandbox.go(globalThis, sb => {
 				.run();
 		});
 		it("Calling a setter should not force react components to rerender that use a key when the new value is the same as the old one", async () => {
-			const tracker = new assert.CallTracker();
-			const Component1 = tracker.calls(ComponentNumber, 1);
+			const tracker = sandbox.track(ComponentNumber);
+			const Component1 = tracker.f;
 			function Component(): JSX.Element {
 				return (
 					<>
@@ -607,11 +563,11 @@ sandbox.go(globalThis, sb => {
 				);
 			}
 			await sb.render(<Component />).simulate(sb => sb.find(".store button")!, "click").run();
-			tracker.verify();
+			assert.equal(tracker.calls, 1);
 		});
 		it("Calling a setter should not force react components to rerender that don't use keys when the new value is the same as the old one", async () => {
-			const tracker = new assert.CallTracker();
-			const Component1 = tracker.calls(ComponentStore, 1);
+			const tracker = sandbox.track(ComponentStore);
+			const Component1 = tracker.f;
 			function Component(): JSX.Element {
 				return (
 					<>
@@ -625,91 +581,83 @@ sandbox.go(globalThis, sb => {
 				);
 			}
 			await sb.render(<Component />).simulate(sb => sb.find(".store-2 button")!, "click").run();
-			tracker.verify();
+			assert.equal(tracker.calls, 1);
 		});
 	});
 	describe("on(key, listener)", () => {
 		it("Should accept correct parameter and be called when calling setValue() with the same key", () => {
-			const [f, tracker] = createTracker(1);
-			store.on("number", f);
+			const tracker = sandbox.track(() => {});
+			store.on("number", tracker.f);
 			store.setValue("number", 10);
-			assert.equal(tracker.getCalls(f)[0].arguments[0], 10);
-			tracker.verify();
+			assert.equal(tracker.info[0][0][0], 10);
+			assert.equal(tracker.calls, 1);
 		});
 		it("Should not be called when calling setValue() with the same key and the new value is the same as the old one", () => {
-			const [f, tracker] = createTracker(1);
-			store.on("number", f);
-			f();
+			const tracker = sandbox.track(() => {});
+			store.on("number", tracker.f);
 			store.setValue("number", store.getValue("number"));
-			tracker.verify();
+			assert.equal(tracker.calls, 0);
 		});
 		it("Should not be called when calling setValue() with a different key", () => {
-			const [f, tracker] = createTracker(1);
-			store.on("number", f);
-			f();
+			const tracker = sandbox.track(() => {});
+			store.on("number", tracker.f);
 			store.setValue("string", "Hello, World!");
-			tracker.verify();
+			assert.equal(tracker.calls, 0);
 		});
 		it("Should accept correct parameter and be called when calling setStore() with the same key", () => {
-			const [f, tracker] = createTracker(1);
-			store.on("number", f);
+			const tracker = sandbox.track(() => {});
+			store.on("number", tracker.f);
 			store.setStore({number: 10});
-			assert.equal(tracker.getCalls(f)[0].arguments[0], 10);
-			tracker.verify();
+			assert.equal(tracker.info[0][0][0], 10);
+			assert.equal(tracker.calls, 1);
 		});
 		it("Should not be called when calling setStore() with the same key and the new value is the same as the old one", () => {
-			const [f, tracker] = createTracker(1);
-			store.on("number", f);
-			f();
+			const tracker = sandbox.track(() => {});
+			store.on("number", tracker.f);
 			store.setStore({number: store.getValue("number")});
-			tracker.verify();
+			assert.equal(tracker.calls, 0);
 		});
 		it("Should not be called when calling setStore() with another keys", () => {
-			const [f, tracker] = createTracker(1);
-			store.on("number", f);
-			f();
+			const tracker = sandbox.track(() => {});
+			store.on("number", tracker.f);
 			store.setStore({string: "Hello, World!"});
-			tracker.verify();
+			assert.equal(tracker.calls, 0);
 		});
 		it("Should accept correct parameter and be called when calling a key hook setter with the same key", async () => {
-			const [f, tracker] = createTracker(1);
-			store.on("number", f);
+			const tracker = sandbox.track(() => {});
+			store.on("number", tracker.f);
 			await sb.render(<ComponentNumber />).simulate(sb => sb.find("button")!, "click").run();
-			assert.equal(tracker.getCalls(f)[0].arguments[0], 2);
-			tracker.verify();
+			assert.equal(tracker.info[0][0][0], 2);
+			assert.equal(tracker.calls, 1);
 		});
 		it("Should not be called when calling a key hook setter with the same key and the new value is the same as the old one", async () => {
-			const [f, tracker] = createTracker(1);
-			store.on("number", f);
-			f();
+			const tracker = sandbox.track(() => {});
+			store.on("number", tracker.f);
 			await sb.render(<ComponentNumber noop={true} />).simulate(sb => sb.find("button")!, "click").run();
-			tracker.verify();
+			assert.equal(tracker.calls, 0);
 		});
 		it("Should not be called when calling a key hook setter() with a different key", async () => {
-			const [f, tracker] = createTracker(1);
-			store.on("number", f);
-			f();
+			const tracker = sandbox.track(() => {});
+			store.on("number", tracker.f);
 			await sb.render(<ComponentString />).simulate(sb => sb.find("button")!, "click").run();
-			tracker.verify();
+			assert.equal(tracker.calls, 0);
 		});
 		it("Should accept correct parameter and be called when calling a store hook setter with the same key", async () => {
-			const [f, tracker] = createTracker(1);
-			store.on("number", f);
+			const tracker = sandbox.track(() => {});
+			store.on("number", tracker.f);
 			await sb.render(<ComponentStore />).simulate(sb => sb.find("button")!, "click").run();
-			assert.equal(tracker.getCalls(f)[0].arguments[0], 2);
-			tracker.verify();
+			assert.equal(tracker.info[0][0][0], 2);
+			assert.equal(tracker.calls, 1);
 		});
 		it("Should not be called when calling a store hook setter with the same key and the new value is the same as the old one", async () => {
-			const [f, tracker] = createTracker(1);
-			store.on("number", f);
-			f();
+			const tracker = sandbox.track(() => {});
+			store.on("number", tracker.f);
 			await sb.render(<ComponentStore noop={true} />).simulate(sb => sb.find("button")!, "click").run();
-			tracker.verify();
+			assert.equal(tracker.calls, 0);
 		});
 		it("Should not be called when calling a store hook setter with another keys", async () => {
-			const [f, tracker] = createTracker(1);
-			store.on("number", f);
-			f();
+			const tracker = sandbox.track(() => {});
+			store.on("number", tracker.f);
 			function Component(): JSX.Element {
 				const [value, setValue] = store.useStore();
 				return (
@@ -719,93 +667,81 @@ sandbox.go(globalThis, sb => {
 				);
 			}
 			await sb.render(<Component />).simulate(sb => sb.find("button")!, "click").run();
-			tracker.verify();
+			assert.equal(tracker.calls, 0);
 		});
 	});
 	describe("on(listener)", () => {
 		it("Should accept correct parameter and be called when calling setValue()", () => {
-			const [f, tracker] = createTracker(1);
-			store.on(f);
+			const tracker = sandbox.track(() => {});
+			store.on(tracker.f);
 			store.setValue("number", 10);
-			assert.deepStrictEqual(tracker.getCalls(f)[0].arguments[0], {number: 10, string: "A"});
-			tracker.verify();
+			assert.deepStrictEqual(tracker.info[0][0][0], {number: 10, string: "A"});
+			assert.equal(tracker.calls, 1);
 		});
 		it("Should not be called when calling setValue() and the new value is the same as the old one", () => {
-			const [f, tracker] = createTracker(1);
-			store.on(f);
-			f();
+			const tracker = sandbox.track(() => {});
+			store.on(tracker.f);
 			store.setValue("number", store.getValue("number"));
-			tracker.verify();
+			assert.equal(tracker.calls, 0);
 		});
 		it("Should accept correct parameter and be called when calling setStore()", () => {
-			const [f, tracker] = createTracker(1);
-			store.on(f);
+			const tracker = sandbox.track(() => {});
+			store.on(tracker.f);
 			store.setStore({number: 10});
-			assert.deepStrictEqual(tracker.getCalls(f)[0].arguments[0], {number: 10, string: "A"});
-			tracker.verify();
+			assert.deepStrictEqual(tracker.info[0][0][0], {number: 10, string: "A"});
+			assert.equal(tracker.calls, 1);
 		});
 		it("Should not be called when calling setStore() and the new value is the same as the old one", () => {
-			const [f, tracker] = createTracker(1);
-			store.on(f);
-			f();
+			const tracker = sandbox.track(() => {});
+			store.on(tracker.f);
 			store.setStore({...store.getStore()});
-			tracker.verify();
+			assert.equal(tracker.calls, 0);
 		});
 		it("Should accept correct parameter and be called when calling a key hook setter with a key", async () => {
-			const [f, tracker] = createTracker(1);
-			store.on(f);
+			const tracker = sandbox.track(() => {});
+			store.on(tracker.f);
 			await sb.render(<ComponentNumber />).simulate(sb => sb.find("button")!, "click").run();
-			assert.deepStrictEqual(tracker.getCalls(f)[0].arguments[0], {number: 2, string: "A"});
-			tracker.verify();
+			assert.deepStrictEqual(tracker.info[0][0][0], {number: 2, string: "A"});
+			assert.equal(tracker.calls, 1);
 		});
 		it("Should not be called when calling a key hook setter with a key and the new value is the same as the old one", async () => {
-			const [f, tracker] = createTracker(1);
-			store.on(f);
-			f();
+			const tracker = sandbox.track(() => {});
+			store.on(tracker.f);
 			await sb.render(<ComponentNumber noop={true} />).simulate(sb => sb.find("button")!, "click").run();
-			tracker.verify();
+			assert.equal(tracker.calls, 0);
 		});
 		it("Should accept correct parameter and be called when calling a store hook setter", async () => {
-			const [f, tracker] = createTracker(1);
-			store.on(f);
+			const tracker = sandbox.track(() => {});
+			store.on(tracker.f);
 			await sb.render(<ComponentStore />).simulate(sb => sb.find("button")!, "click").run();
-			assert.deepStrictEqual(tracker.getCalls(f)[0].arguments[0], {number: 2, string: "AB"});
-			tracker.verify();
+			assert.deepStrictEqual(tracker.info[0][0][0], {number: 2, string: "AB"});
+			assert.equal(tracker.calls, 1);
 		});
 		it("Should not be called when calling a store hook setter and the new value is the same as the old one", async () => {
-			const [f, tracker] = createTracker(1);
-			store.on(f);
-			f();
+			const tracker = sandbox.track(() => {});
+			store.on(tracker.f);
 			await sb.render(<ComponentStore noop={true} />).simulate(sb => sb.find("button")!, "click").run();
-			tracker.verify();
+			assert.equal(tracker.calls, 0);
 		});
 	});
 	describe("off(key, listener)", () => {
 		it("Should not call listener after unsubscribing it", () => {
-			const [f, tracker] = createTracker(1);
-			store.on("number", f);
-			store.off("number", f);
-			f();
+			const tracker = sandbox.track(() => {});
+			store.on("number", tracker.f);
+			store.off("number", tracker.f);
 			store.setValue("number", 10);
 			store.setStore({number: 20});
-			tracker.verify();
+			assert.equal(tracker.calls, 0);
 		});
 	});
 	describe("off(listener)", () => {
 		it("Should not call listener after unsubscribing it", () => {
-			const [f, tracker] = createTracker(1);
-			store.on(f);
-			store.off(f);
-			f();
+			const tracker = sandbox.track(() => {});
+			store.on(tracker.f);
+			store.off(tracker.f);
 			store.setValue("number", 10);
 			store.setStore({number: 20});
-			tracker.verify();
+			assert.equal(tracker.calls, 0);
 		});
 	});
 });
-
-function createTracker(calls: number): [() => void, assert.CallTracker] {
-	const tracker = new assert.CallTracker();
-	const f = tracker.calls(() => {}, calls);
-	return [f, tracker];
-}
