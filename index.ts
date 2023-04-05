@@ -24,8 +24,8 @@ import * as React from "react";
  * 			<p>{JSON.stringify(value)}</p>
  * 			<p>{num}</p>
  * 			<button onClick={() => {
- * 				setValue({string: "ab"});
- * 				setNum(10);
+ * 				setValue({string: "ab"});               // Override multiple store entries
+ * 				setNum(10);                             // Set value for only "number" entry
  * 			}}>Update the store</button>
  * 		</div>
  * 	);
