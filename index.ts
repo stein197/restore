@@ -1,6 +1,37 @@
 import * as React from "react";
 
-// TODO
+/**
+ * Creates a simple store object. The object has methods for changing, retrieving and subscribing/unsubscribing on/off
+ * changes and one React hook to use in components. Store contains data which can be retrieved/changed by a string key.
+ * Every change to the store calls subscribed listeners and rerenders. When making a change to the store, the store
+ * doesn't make redundant calls or component rerenders.
+ * @typeParam T - Store object type.
+ * @param store Initial value for the store.
+ * @example
+ * ```tsx
+ * const store = createStore({number: 1, string: "a"}); // Create a store with initial state
+ * store.getValue("number");                            // 1
+ * store.getStore();                                    // {number: 1, string: ""}
+ * store.setValue("number", 10);                        // Set value for "number" key
+ * store.setStore({string: "ab"});                      // Override multiple store entries
+ * store.on("number", console.log);                     // Subscribe on "number" entry change
+ * store.on(console.log);                               // Subscribe on every store change
+ * function Component(): JSX.Element {
+ * 	const [value, setValue] = store.useStore();         // Using a hook that returns the whole store and a setter
+ * 	const [num, setNum] = store.useStore("number");     // Use a hook that returns a data associated with "number" field
+ * 	return (
+ * 		<div>
+ * 			<p>{JSON.stringify(value)}</p>
+ * 			<p>{num}</p>
+ * 			<button onClick={() => {
+ * 				setValue({string: "ab"});
+ * 				setNum(10);
+ * 			}}>Update the store</button>
+ * 		</div>
+ * 	);
+ * }
+ * ```
+ */
 export = function createStore<T>(store: T): Store<T> {
 	const listenerStore: any = {};
 	function updateStore<K extends keyof T>(key: K | "", value: T[K] | Partial<T>): void {
