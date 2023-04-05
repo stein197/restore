@@ -223,7 +223,7 @@ sandbox.go(globalThis, sb => {
 		});
 		it("setStore() should call callbacks registered through on() using a key", () => {
 			const tracker = sandbox.track(() => {});
-			store.on("string", tracker.f);
+			store.on("number", tracker.f);
 			store.setStore({number: 10});
 			assert.equal(tracker.calls, 1);
 		});
