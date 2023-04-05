@@ -1,7 +1,7 @@
 {
   "name": "@stein197/restore",
   "version": "1.0.0",
-  "description": "Simple React key-based store management library",
+  "description": "Simple key-based store management library with React support",
   "main": "index.js",
   "scripts": {
     "clean": "del .\\*.js .\\*.d.ts .\\*.map 2>nul",
